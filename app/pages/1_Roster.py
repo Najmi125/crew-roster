@@ -7,7 +7,6 @@ import os
 
 load_dotenv()
 
-st.set_page_config(page_title="Roster View", page_icon="📋", layout="wide")
 st.title("📋 7-Day Roster View")
 
 def get_connection():
@@ -87,5 +86,6 @@ try:
 
 except Exception as e:
     st.error(f"Error: {e}")
+
 
 
