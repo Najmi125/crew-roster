@@ -10,10 +10,7 @@ load_dotenv()
 st.title("📋 7-Day Roster View")
 
 def get_connection():
-    try:
-        url = st.secrets["DATABASE_URL"]
-    except:
-        url = os.getenv("DATABASE_URL")
+    url = os.getenv("DATABASE_URL")
     return psycopg2.connect(url)
 
 # Date range selector
