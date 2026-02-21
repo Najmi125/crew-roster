@@ -1,4 +1,4 @@
-import streamlit as st
+
 from dotenv import load_dotenv
 import psycopg2
 import os
@@ -14,9 +14,12 @@ st.set_page_config(
 
 # DB connection
 def get_connection():
-    import streamlit as st
-    url = st.secrets.get("DATABASE_URL") or os.getenv("DATABASE_URL")
-    return psycopg2.connect(url)
+    try:
+        url = st.secrets["DATABASE_URL"]
+    except:
+        url = os.getenv("DATABASE_URL")
+    return psycopg2.connect(url)def get_connection():
+    
 
 # Sidebar
 st.sidebar.image("https://raw.githubusercontent.com/Najmi125/crew-roster/main/assets/cc.jpg")
@@ -75,5 +78,6 @@ else:
 
 st.markdown("### 📋 Quick Status")
 st.info("No flights scheduled yet — use the admin panel to add crew and flights.")
+
 
 
