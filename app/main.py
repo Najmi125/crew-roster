@@ -14,10 +14,12 @@ st.set_page_config(
 
 # DB connection
 def get_connection():
-    return psycopg2.connect(os.getenv("DATABASE_URL"))
+    import streamlit as st
+    url = st.secrets.get("DATABASE_URL") or os.getenv("DATABASE_URL")
+    return psycopg2.connect(url)
 
 # Sidebar
-st.sidebar.image("https://upload.wikimedia.org/wikipedia/commons/thumb/4/47/PNG_transparency_demonstration_1.png/240px-PNG_transparency_demonstration_1.png")
+st.sidebar.image("assets/cc.jpg") 
 st.sidebar.title("✈️ Crew Roster")
 st.sidebar.markdown("---")
 mode = st.sidebar.radio("Mode", ["🟢 Live", "🧪 Simulation"])
@@ -73,3 +75,4 @@ else:
 
 st.markdown("### 📋 Quick Status")
 st.info("No flights scheduled yet — use the admin panel to add crew and flights.")
+
