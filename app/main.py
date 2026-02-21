@@ -21,12 +21,12 @@ def get_connection():
     return psycopg2.connect(url)
 
 # Sidebar
-st.sidebar.image("https://raw.githubusercontent.com/Najmi125/crew-roster/main/assets/cc.jpg", width=150)
 st.sidebar.title("✈️ Crew Roster")
 st.sidebar.markdown("---")
 mode = st.sidebar.radio("Mode", ["🟢 Live", "🧪 Simulation"])
 st.sidebar.markdown("---")
 st.sidebar.markdown("**OCC Decision Support**")
+st.sidebar.image("https://raw.githubusercontent.com/Najmi125/crew-roster/main/assets/cc.jpg", width=150)
 
 # Main header
 st.title("✈️ AI Crew Roster System")
@@ -69,4 +69,5 @@ else:
 
 st.markdown("### 📋 Quick Status")
 st.info("Use the sidebar to navigate to Roster View or Manual Override.")
+
 
