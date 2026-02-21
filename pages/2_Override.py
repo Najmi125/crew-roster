@@ -12,10 +12,7 @@ st.title("⚠️ Manual Override Panel")
 st.caption("OCC Planner — Replace crew on any flight. All changes are logged.")
 
 def get_connection():
-    try:
-        url = st.secrets["DATABASE_URL"]
-    except:
-        url = os.getenv("DATABASE_URL")
+    url = os.getenv("DATABASE_URL")
     return psycopg2.connect(url)
 
 st.markdown("---")
