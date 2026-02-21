@@ -19,7 +19,7 @@ def get_connection():
     return psycopg2.connect(url)
 
 # Sidebar
-st.sidebar.image("assets/cc.jpg") 
+st.sidebar.image("https://raw.githubusercontent.com/Najmi125/crew-roster/main/assets/cc.jpg")
 st.sidebar.title("✈️ Crew Roster")
 st.sidebar.markdown("---")
 mode = st.sidebar.radio("Mode", ["🟢 Live", "🧪 Simulation"])
@@ -75,4 +75,5 @@ else:
 
 st.markdown("### 📋 Quick Status")
 st.info("No flights scheduled yet — use the admin panel to add crew and flights.")
+
 
