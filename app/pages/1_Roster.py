@@ -11,7 +11,9 @@ st.set_page_config(page_title="Roster View", page_icon="📋", layout="wide")
 st.title("📋 7-Day Roster View")
 
 def get_connection():
-    return psycopg2.connect(os.getenv("DATABASE_URL"))
+    import streamlit as st
+    url = st.secrets.get("DATABASE_URL") or os.getenv("DATABASE_URL")
+    return psycopg2.connect(url)
 
 # Date range selector
 col1, col2 = st.columns([2, 4])
@@ -83,3 +85,4 @@ try:
 
 except Exception as e:
     st.error(f"Error: {e}")
+
