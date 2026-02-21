@@ -12,7 +12,9 @@ st.title("⚠️ Manual Override Panel")
 st.caption("OCC Planner — Replace crew on any flight. All changes are logged.")
 
 def get_connection():
-    return psycopg2.connect(os.getenv("DATABASE_URL"))
+    import streamlit as st
+    url = st.secrets.get("DATABASE_URL") or os.getenv("DATABASE_URL")
+    return psycopg2.connect(url)
 
 st.markdown("---")
 
@@ -142,4 +144,5 @@ if st.button("✅ Confirm Override", type="primary"):
     st.balloons()
 
 cur.close()
+
 conn.close()
