@@ -214,7 +214,7 @@
 <!-- Main -->
 <div class="main">
   <div class="occ-title">AI Generated Crew Scheduling System</div>
-  <div class="occ-sub">30 days dynamic/rolling roster </div>
+  <div class="occ-sub">30 days rolling rosster </div>
   <span class="live-badge">● LIVE — Operational Roster</span>
 
   <!-- Metrics -->
