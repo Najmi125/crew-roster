@@ -1,9 +1,8 @@
-import os
 import streamlit as st
+import os
 
-# Re-inject secrets as env vars so runpy context can access them
+# Inject secrets as env vars for pages running via runpy
 if hasattr(st, 'secrets') and 'DATABASE_URL' in st.secrets:
     os.environ['DATABASE_URL'] = st.secrets['DATABASE_URL']
 
-import runpy
-runpy.run_path("app/main.py")
+st.switch_page("pages/0_Dashboard.py")
