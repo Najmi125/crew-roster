@@ -1,0 +1,3 @@
+[[pages]]
+path = "streamlit_app.py"
+hidden = true
