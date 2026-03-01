@@ -70,11 +70,11 @@ try:
         LEFT JOIN flight_schedule fs ON fs.id = r.flight_id
             AND fs.departure_time::date BETWEEN %s AND %s
         LEFT JOIN duty_log dl ON dl.crew_id = cm.id
-            AND dl.duty_start >= %s
+            AND dl.duty_start >= %s AND dl.duty_start <= %s
         WHERE cm.is_active = TRUE {role_sql}
         GROUP BY cm.id, cm.full_name, cm.role, cm.employee_id
         ORDER BY total_hours DESC
-    """, (since_28, today, since_28))
+    """, (since_28, today, since_28, today))
     rows = cur.fetchall()
     cur.close()
     conn.close()
