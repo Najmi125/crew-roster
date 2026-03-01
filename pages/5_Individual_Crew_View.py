@@ -95,6 +95,19 @@ try:
     cur.execute("SELECT MAX(duty_end) FROM duty_log WHERE crew_id=%s AND duty_start <= %s", (crew_id, today))
     last_end = cur.fetchone()[0]
 
+    # Last month date range
+    last_month_end   = month_start - timedelta(days=1)
+    last_month_start = last_month_end.replace(day=1)
+
+    cur.execute(
+        "SELECT fs.flight_number, fs.departure_time::date, fs.departure_time, fs.arrival_time, fs.origin, fs.destination "
+        "FROM roster r JOIN flight_schedule fs ON fs.id = r.flight_id "
+        "WHERE r.crew_id = %s AND fs.departure_time::date BETWEEN %s AND %s "
+        "ORDER BY fs.departure_time",
+        (crew_id, last_month_start, last_month_end)
+    )
+    last_month_duties = cur.fetchall()
+
     # Qualifications
     try:
         cur.execute("SELECT qualification_type, expiry_date FROM crew_qualifications WHERE crew_id=%s ORDER BY expiry_date", (crew_id,))
@@ -198,6 +211,26 @@ try:
 
     cal_html += '</div>'
     st.markdown(cal_html, unsafe_allow_html=True)
+
+    # ── Last Month Consolidated Duty Log ─────────────────────────────────────
+    st.markdown("---")
+    st.markdown(f"#### 📋 Last Month Duty Log — {last_month_start.strftime('%B %Y')}")
+    if not last_month_duties:
+        st.info("No duties recorded for last month.")
+    else:
+        lm_sectors = len(last_month_duties)
+        lm_hours   = sum((arr - dep).total_seconds()/3600 for _, _, dep, arr, *_ in last_month_duties)
+        lm_routes  = list(dict.fromkeys(f"{orig}>{dest}" for _, _, _, _, orig, dest in last_month_duties))
+        col_a, col_b, col_c = st.columns(3)
+        col_a.metric("Total Sectors",    str(lm_sectors))
+        col_b.metric("Total Duty Hours", f"{lm_hours:.1f}h")
+        col_c.metric("Routes Flown",     str(len(lm_routes)))
+        lm_rows = [{"Flight": fn, "Date": str(dt), "Route": f"{orig}>{dest}",
+                    "Dep": dep.strftime('%H:%M'), "Arr": arr.strftime('%H:%M'),
+                    "Hours": f"{(arr-dep).total_seconds()/3600:.1f}h"}
+                   for fn, dt, dep, arr, orig, dest in last_month_duties]
+        st.dataframe(pd.DataFrame(lm_rows), use_container_width=True, hide_index=True)
+    st.markdown("---")
 
     # Print + CSV
     st.markdown('<button class="print-btn" onclick="window.print()">🖨️ Print / Save as PDF</button>', unsafe_allow_html=True)
