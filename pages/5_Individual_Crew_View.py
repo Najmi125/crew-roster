@@ -85,14 +85,14 @@ try:
     """, (crew_id, month_start, month_end))
     duties = cur.fetchall()
 
-    # FDTL stats
-    cur.execute("SELECT COALESCE(SUM(total_duty_hours),0) FROM duty_log WHERE crew_id=%s AND duty_start >= %s", (crew_id, today - timedelta(days=7)))
+    # FDTL stats — past duties only (duty_start <= today)
+    cur.execute("SELECT COALESCE(SUM(total_duty_hours),0) FROM duty_log WHERE crew_id=%s AND duty_start >= %s AND duty_start <= %s", (crew_id, today - timedelta(days=7), today))
     weekly_hrs = float(cur.fetchone()[0])
 
-    cur.execute("SELECT COALESCE(SUM(total_duty_hours),0) FROM duty_log WHERE crew_id=%s AND duty_start >= %s", (crew_id, today - timedelta(days=28)))
+    cur.execute("SELECT COALESCE(SUM(total_duty_hours),0) FROM duty_log WHERE crew_id=%s AND duty_start >= %s AND duty_start <= %s", (crew_id, today - timedelta(days=28), today))
     monthly_hrs = float(cur.fetchone()[0])
 
-    cur.execute("SELECT MAX(duty_end) FROM duty_log WHERE crew_id=%s", (crew_id,))
+    cur.execute("SELECT MAX(duty_end) FROM duty_log WHERE crew_id=%s AND duty_start <= %s", (crew_id, today))
     last_end = cur.fetchone()[0]
 
     # Qualifications
@@ -125,8 +125,9 @@ try:
     # ── Next legal report time ────────────────────────────────────────────────
     if last_end:
         next_legal = last_end + timedelta(hours=12)
-        if next_legal > today.replace(hour=0) if hasattr(today, 'hour') else True:
-            st.markdown(f'<div class="next-legal">⏰ Next Legal Report Time: {next_legal.strftime("%d %b %Y at %H:%M")}</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="next-legal">⏰ Next Legal Report Time: {next_legal.strftime("%d %b %Y at %H:%M")}</div>', unsafe_allow_html=True)
+    else:
+        st.markdown('<div class="next-legal">⏰ Next Legal Report Time: No completed duties on record</div>', unsafe_allow_html=True)
 
     # ── FDTL Summary ──────────────────────────────────────────────────────────
     def fdtl_class(val, warn, limit):
