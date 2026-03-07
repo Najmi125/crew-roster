@@ -23,6 +23,8 @@ class CrewState:
         self.last_day_end   = None      # last arrival time on last duty day
         self.total_sectors  = 0
         self.total_hours    = 0.0
+        self.consec_days    = 0    # consecutive duty days
+        self.last_consec_date = None  # last date counted for consecutive
 
     def flying_hours_since(self, since):
         return sum(h for s, e, h in self.duty_log if s >= since)
@@ -42,6 +44,12 @@ class CrewState:
         if self.last_duty_date and self.last_duty_date != duty_date:
             rest = (dep - self.last_day_end).total_seconds() / 3600
             if rest < MIN_REST_HOURS:
+                return False
+
+        # Max 6 consecutive duty days
+        if self.last_duty_date and self.last_duty_date != duty_date:
+            gap_days = (duty_date - self.last_duty_date).days
+            if gap_days == 1 and self.consec_days >= 6:
                 return False
 
         # Max FDP — from first departure today to this arrival
@@ -69,7 +77,15 @@ class CrewState:
     def assign(self, dep, arr):
         hours = (arr - dep).total_seconds() / 3600
         self.duty_log.append((dep, arr, hours))
-        self.last_duty_date = dep.date()
+        duty_date = dep.date()
+        # Track consecutive days
+        if self.last_duty_date is None:
+            self.consec_days = 1
+        elif (duty_date - self.last_duty_date).days == 1:
+            self.consec_days += 1
+        elif duty_date != self.last_duty_date:
+            self.consec_days = 1  # reset after a day off
+        self.last_duty_date = duty_date
         self.last_day_end   = arr
         self.total_sectors += 1
         self.total_hours   += hours
