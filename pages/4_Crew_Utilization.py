@@ -136,57 +136,30 @@ try:
         </div>
         """, unsafe_allow_html=True)
 
-        table_html = """
-        <style>
-        .util-table { width:100%; border-collapse:collapse; font-family:'Exo 2',sans-serif; font-size:0.78rem; }
-        .util-table th { background:#1a1a2e; color:#fff; padding:8px 10px; text-align:left; font-size:0.68rem; letter-spacing:0.08em; text-transform:uppercase; }
-        .util-table td { padding:7px 10px; border-bottom:1px solid #eee; }
-        .util-table tr:hover td { background:#f0f4ff; }
-        .zone-over  { background:#fff0f0 !important; color:#721c24; font-weight:700; }
-        .zone-under { background:#fff8e1 !important; color:#856404; }
-        .zone-ok    { background:#f0fff4 !important; color:#155724; }
-        .bar-bg   { background:#e9ecef; border-radius:3px; height:10px; }
-        .bar-fill { height:10px; border-radius:3px; }
-        </style>
-        <table class="util-table">
-          <thead><tr>
-            <th>#</th><th>Name</th><th>Role</th><th>ID</th>
-            <th>Sectors</th><th>Duty Hours (28d)</th><th>Utilization</th>
-            <th>Early Dep</th><th>Night Dep</th><th>Overrides</th><th>Zone</th>
-          </tr></thead><tbody>
-        """
+        # Build display dataframe
+        display_df = df.sort_values('hours', ascending=False).copy()
+        display_df['Role']      = display_df['role'].apply(lambda x: '🟡 LCC' if x == 'LCC' else '🔵 CC')
+        display_df['Hours']     = display_df['hours'].apply(lambda x: f'{x:.1f}h')
+        display_df['Zone']      = display_df['hours'].apply(
+            lambda h: '🔴 Over' if (avg_hrs > 0 and h > avg_hrs * 1.2)
+                      else ('🟡 Under' if (avg_hrs > 0 and h < avg_hrs * 0.8) else '✅ Balanced')
+        )
+        display_df['Overrides'] = display_df['overrides'].apply(lambda x: f'⚠️ {x}' if x > 0 else '—')
 
-        for i, row in enumerate(df.sort_values('hours', ascending=False).itertuples(), 1):
-            pct       = (row.hours / 100 * 100) if max_hrs > 0 else 0
-            bar_color = "#dc3545" if (avg_hrs > 0 and row.hours > avg_hrs * 1.2) else \
-                        ("#f59e0b" if (avg_hrs > 0 and row.hours < avg_hrs * 0.8) else "#28a745")
+        out = display_df.rename(columns={
+            'full_name': 'Name', 'employee_id': 'ID',
+            'sectors': 'Sectors', 'early': 'Early Dep',
+            'night': 'Night Dep'
+        })[['Name','Role','ID','Sectors','Hours','Zone','Early Dep','Night Dep','Overrides']]
 
-            if avg_hrs > 0 and row.hours > avg_hrs * 1.2:
-                zone_class, zone_label = "zone-over",  "🔴 Over"
-            elif avg_hrs > 0 and row.hours < avg_hrs * 0.8:
-                zone_class, zone_label = "zone-under", "🟡 Under"
-            else:
-                zone_class, zone_label = "zone-ok",    "✅ Balanced"
+        def color_zone(val):
+            if '🔴' in str(val): return 'background-color:#fff0f0;color:#721c24;font-weight:bold'
+            if '🟡' in str(val): return 'background-color:#fff8e1;color:#856404'
+            if '✅' in str(val): return 'background-color:#f0fff4;color:#155724'
+            return ''
 
-            bar = f'<div class="bar-bg"><div class="bar-fill" style="width:{min(pct,100):.0f}%;background:{bar_color}"></div></div>'
-
-            table_html += f"""
-            <tr>
-              <td>{i}</td>
-              <td><b>{row.full_name}</b></td>
-              <td>{'🟡 LCC' if row.role=='LCC' else '🔵 CC'}</td>
-              <td style="font-family:'Share Tech Mono',monospace;font-size:0.7rem">{row.employee_id}</td>
-              <td style="text-align:center">{row.sectors}</td>
-              <td><b>{row.hours:.1f}h</b> {bar}</td>
-              <td style="text-align:center">{row.hours/100*100:.0f}%</td>
-              <td style="text-align:center">{row.early}</td>
-              <td style="text-align:center">{row.night}</td>
-              <td style="text-align:center">{'⚠️ '+str(row.overrides) if row.overrides > 0 else '—'}</td>
-              <td class="{zone_class}">{zone_label}</td>
-            </tr>"""
-
-        table_html += "</tbody></table>"
-        st.markdown(table_html, unsafe_allow_html=True)
+        styled = out.style.applymap(color_zone, subset=['Zone'])
+        st.dataframe(styled, use_container_width=True, hide_index=True)
 
         csv_buf = io.StringIO()
         df.drop(columns=['id']).to_csv(csv_buf, index=False)
