@@ -73,7 +73,10 @@ try:
     """)
     crew_rows = cur.fetchall()
 
-    # ── Get completed sectors per crew (past duties only) ─────────────────────
+    # ── Get ALL roster sectors for current month (treat as completed) ──────────
+    month_start = today.replace(day=1)
+    month_end   = (month_start + timedelta(days=32)).replace(day=1) - timedelta(days=1)
+
     cur.execute("""
         SELECT r.crew_id, COUNT(r.id) AS sectors,
                COUNT(CASE WHEN EXTRACT(HOUR FROM fs.departure_time) < 6  THEN 1 END) AS early,
@@ -83,16 +86,18 @@ try:
         JOIN flight_schedule fs ON fs.id = r.flight_id
         WHERE fs.departure_time::date BETWEEN %s AND %s
         GROUP BY r.crew_id
-    """, (since_28, today))
+    """, (month_start, month_end))
     sector_map = {r[0]: r[1:] for r in cur.fetchall()}
 
-    # ── Get duty hours per crew (past completed only) ─────────────────────────
+    # ── Get duty hours from roster (all scheduled this month as planned) ───────
     cur.execute("""
-        SELECT crew_id, COALESCE(SUM(total_duty_hours), 0) AS hours
-        FROM duty_log
-        WHERE duty_start >= %s AND duty_start <= %s
-        GROUP BY crew_id
-    """, (since_28, today))
+        SELECT r.crew_id,
+               COALESCE(SUM(EXTRACT(EPOCH FROM (fs.arrival_time - fs.departure_time))/3600), 0) AS hours
+        FROM roster r
+        JOIN flight_schedule fs ON fs.id = r.flight_id
+        WHERE fs.departure_time::date BETWEEN %s AND %s
+        GROUP BY r.crew_id
+    """, (month_start, month_end))
     hours_map = {r[0]: float(r[1]) for r in cur.fetchall()}
 
     cur.close()
