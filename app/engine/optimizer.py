@@ -154,22 +154,41 @@ def build_roster(start_date, end_date):
         if (i + 1) % 60 == 0:
             print(f"   {i+1}/{total} flights processed...")
 
-    chunk = 100
+    chunk = 50
+
     print("   Saving roster...")
     for j in range(0, len(roster_rows), chunk):
-        cur.executemany(
-            "INSERT INTO roster (flight_id, crew_id, duty_date) VALUES (%s,%s,%s) ON CONFLICT DO NOTHING",
-            roster_rows[j:j+chunk]
-        )
-        conn.commit()
+        try:
+            cur.executemany(
+                "INSERT INTO roster (flight_id, crew_id, duty_date) VALUES (%s,%s,%s) ON CONFLICT DO NOTHING",
+                roster_rows[j:j+chunk]
+            )
+            conn.commit()
+        except Exception:
+            conn = get_connection()
+            cur  = conn.cursor()
+            cur.executemany(
+                "INSERT INTO roster (flight_id, crew_id, duty_date) VALUES (%s,%s,%s) ON CONFLICT DO NOTHING",
+                roster_rows[j:j+chunk]
+            )
+            conn.commit()
 
     print("   Saving duty log...")
     for j in range(0, len(duty_rows), chunk):
-        cur.executemany(
-            "INSERT INTO duty_log (crew_id, flight_id, duty_start, duty_end, total_duty_hours) VALUES (%s,%s,%s,%s,%s)",
-            duty_rows[j:j+chunk]
-        )
-        conn.commit()
+        try:
+            cur.executemany(
+                "INSERT INTO duty_log (crew_id, flight_id, duty_start, duty_end, total_duty_hours) VALUES (%s,%s,%s,%s,%s)",
+                duty_rows[j:j+chunk]
+            )
+            conn.commit()
+        except Exception:
+            conn = get_connection()
+            cur  = conn.cursor()
+            cur.executemany(
+                "INSERT INTO duty_log (crew_id, flight_id, duty_start, duty_end, total_duty_hours) VALUES (%s,%s,%s,%s,%s)",
+                duty_rows[j:j+chunk]
+            )
+            conn.commit()
 
     if violation_rows:
         cur.executemany(
