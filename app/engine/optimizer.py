@@ -118,14 +118,17 @@ def build_roster(start_date, end_date):
 
         # Find 3 legal CCs — start from cc_ptr, rotate through full list
         checked = 0
+        last_cc_idx = cc_ptr
         while len(assigned_ccs) < 3 and checked < len(ccs):
             idx  = (cc_ptr + checked) % len(ccs)
             cc   = ccs[idx]
             legal, reason = check_legality(cur, cc[0], dep, arr)
             if legal:
                 assigned_ccs.append(cc)
-                cc_ptr = (idx + 1) % len(ccs)
+                last_cc_idx = idx
             checked += 1
+        # Always advance pointer past ALL checked crew, not just assigned
+        cc_ptr = (cc_ptr + checked) % len(ccs)
 
         if len(assigned_ccs) < 3:
             flight_violations.append((flight_id, None, 'INSUFFICIENT_CC',
