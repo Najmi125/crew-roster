@@ -137,6 +137,17 @@ try:
         """, unsafe_allow_html=True)
 
         table_html = """
+        <style>
+        .util-table { width:100%; border-collapse:collapse; font-family:'Exo 2',sans-serif; font-size:0.78rem; }
+        .util-table th { background:#1a1a2e; color:#fff; padding:8px 10px; text-align:left; font-size:0.68rem; letter-spacing:0.08em; text-transform:uppercase; }
+        .util-table td { padding:7px 10px; border-bottom:1px solid #eee; }
+        .util-table tr:hover td { background:#f0f4ff; }
+        .zone-over  { background:#fff0f0 !important; color:#721c24; font-weight:700; }
+        .zone-under { background:#fff8e1 !important; color:#856404; }
+        .zone-ok    { background:#f0fff4 !important; color:#155724; }
+        .bar-bg   { background:#e9ecef; border-radius:3px; height:10px; }
+        .bar-fill { height:10px; border-radius:3px; }
+        </style>
         <table class="util-table">
           <thead><tr>
             <th>#</th><th>Name</th><th>Role</th><th>ID</th>
