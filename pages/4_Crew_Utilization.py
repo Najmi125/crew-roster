@@ -3,6 +3,7 @@ import psycopg2
 import pandas as pd
 from datetime import date, timedelta
 from dotenv import load_dotenv
+import io
 import os
 
 load_dotenv()
@@ -16,6 +17,12 @@ def get_connection():
         url = os.getenv("DATABASE_URL")
     return psycopg2.connect(url)
 
+st.sidebar.image(
+    "https://raw.githubusercontent.com/Najmi125/crew-roster/main/assets/logo.png",
+    use_container_width=True
+)
+st.sidebar.markdown("---")
+
 st.markdown("""
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Exo+2:wght@300;400;600&family=Share+Tech+Mono&display=swap');
@@ -28,7 +35,7 @@ st.markdown("""
   .zone-over  { background:#fff0f0 !important; color:#721c24; font-weight:700; }
   .zone-under { background:#fff8e1 !important; color:#856404; }
   .zone-ok    { background:#f0fff4 !important; color:#155724; }
-  .bar-bg { background:#e9ecef; border-radius:3px; height:10px; }
+  .bar-bg   { background:#e9ecef; border-radius:3px; height:10px; }
   .bar-fill { height:10px; border-radius:3px; }
   .summary-cards { display:grid; grid-template-columns:repeat(4,1fr); gap:0.8rem; margin-bottom:1.2rem; }
   .sum-card { background:#f7f8fc; border:1px solid #e0e6f0; border-radius:8px; padding:0.8rem 1rem; border-top:3px solid #1a1a2e; text-align:center; }
@@ -57,66 +64,90 @@ try:
 
     role_sql = "" if role_filter == "All" else f"AND cm.role = '{role_filter}'"
 
+    # ── Get all active crew ───────────────────────────────────────────────────
     cur.execute(f"""
-        SELECT
-            cm.id, cm.full_name, cm.role, cm.employee_id,
-            COUNT(r.id)                                          AS total_sectors,
-            COALESCE(SUM(dl.total_duty_hours), 0)               AS total_hours,
-            COUNT(CASE WHEN EXTRACT(HOUR FROM fs.departure_time) < 6 THEN 1 END) AS early_deps,
-            COUNT(CASE WHEN EXTRACT(HOUR FROM fs.departure_time) >= 20 THEN 1 END) AS night_deps,
-            COUNT(CASE WHEN r.is_manual_override THEN 1 END)    AS overrides
-        FROM crew_master cm
-        LEFT JOIN roster r ON r.crew_id = cm.id
-        LEFT JOIN flight_schedule fs ON fs.id = r.flight_id
-            AND fs.departure_time::date BETWEEN %s AND %s
-        LEFT JOIN duty_log dl ON dl.crew_id = cm.id
-            AND dl.duty_start >= %s AND dl.duty_start <= %s
-        WHERE cm.is_active = TRUE {role_sql}
-        GROUP BY cm.id, cm.full_name, cm.role, cm.employee_id
-        ORDER BY total_hours DESC
-    """, (since_28, today, since_28, today))
-    rows = cur.fetchall()
+        SELECT id, full_name, role, employee_id
+        FROM crew_master
+        WHERE is_active = TRUE {role_sql}
+        ORDER BY role, full_name
+    """)
+    crew_rows = cur.fetchall()
+
+    # ── Get completed sectors per crew (past duties only) ─────────────────────
+    cur.execute("""
+        SELECT r.crew_id, COUNT(r.id) AS sectors,
+               COUNT(CASE WHEN EXTRACT(HOUR FROM fs.departure_time) < 6  THEN 1 END) AS early,
+               COUNT(CASE WHEN EXTRACT(HOUR FROM fs.departure_time) >= 20 THEN 1 END) AS night,
+               COUNT(CASE WHEN r.is_manual_override THEN 1 END) AS overrides
+        FROM roster r
+        JOIN flight_schedule fs ON fs.id = r.flight_id
+        WHERE fs.departure_time::date BETWEEN %s AND %s
+        GROUP BY r.crew_id
+    """, (since_28, today))
+    sector_map = {r[0]: r[1:] for r in cur.fetchall()}
+
+    # ── Get duty hours per crew (past completed only) ─────────────────────────
+    cur.execute("""
+        SELECT crew_id, COALESCE(SUM(total_duty_hours), 0) AS hours
+        FROM duty_log
+        WHERE duty_start >= %s AND duty_start <= %s
+        GROUP BY crew_id
+    """, (since_28, today))
+    hours_map = {r[0]: float(r[1]) for r in cur.fetchall()}
+
     cur.close()
     conn.close()
 
-    df = pd.DataFrame(rows, columns=['id','full_name','role','employee_id',
-                                      'sectors','hours','early','night','overrides'])
-    df['hours'] = df['hours'].astype(float)
+    # ── Build dataframe ───────────────────────────────────────────────────────
+    records = []
+    for crew_id, full_name, role, emp_id in crew_rows:
+        sectors, early, night, overrides = sector_map.get(crew_id, (0, 0, 0, 0))
+        hours = hours_map.get(crew_id, 0.0)
+        records.append({
+            'id': crew_id, 'full_name': full_name, 'role': role,
+            'employee_id': emp_id, 'sectors': int(sectors),
+            'hours': hours, 'early': int(early),
+            'night': int(night), 'overrides': int(overrides)
+        })
+
+    df = pd.DataFrame(records)
 
     if df.empty:
         st.warning("No utilization data found.")
     else:
-        avg_hrs = df['hours'].mean()
+        # Filter to crew with any activity for meaningful stats
+        active_df = df[df['sectors'] > 0]
+        avg_hrs = active_df['hours'].mean() if not active_df.empty else 0
         max_hrs = df['hours'].max()
-        over    = len(df[df['hours'] > avg_hrs * 1.2])
-        under   = len(df[df['hours'] < avg_hrs * 0.8])
+        over    = len(active_df[active_df['hours'] > avg_hrs * 1.2]) if avg_hrs > 0 else 0
+        under   = len(active_df[active_df['hours'] < avg_hrs * 0.8]) if avg_hrs > 0 else 0
 
-        # Summary cards
         st.markdown(f"""
         <div class="summary-cards">
-          <div class="sum-card"><div class="sum-val">{avg_hrs:.1f}h</div><div class="sum-lbl">Avg Hours / Crew</div></div>
+          <div class="sum-card"><div class="sum-val">{avg_hrs:.1f}h</div><div class="sum-lbl">Avg Hours / Active Crew</div></div>
           <div class="sum-card"><div class="sum-val">{max_hrs:.1f}h</div><div class="sum-lbl">Max Hours (any crew)</div></div>
-          <div class="sum-card" style="border-top-color:#dc3545"><div class="sum-val" style="color:#dc3545">{over}</div><div class="sum-lbl">Over-Utilized Crew</div></div>
-          <div class="sum-card" style="border-top-color:#f59e0b"><div class="sum-val" style="color:#856404">{under}</div><div class="sum-lbl">Under-Utilized Crew</div></div>
+          <div class="sum-card" style="border-top-color:#dc3545"><div class="sum-val" style="color:#dc3545">{over}</div><div class="sum-lbl">Over-Utilized</div></div>
+          <div class="sum-card" style="border-top-color:#f59e0b"><div class="sum-val" style="color:#856404">{under}</div><div class="sum-lbl">Under-Utilized</div></div>
         </div>
         """, unsafe_allow_html=True)
 
-        # Table
         table_html = """
         <table class="util-table">
           <thead><tr>
             <th>#</th><th>Name</th><th>Role</th><th>ID</th>
-            <th>Sectors</th><th>Duty Hours</th><th>Utilization</th>
+            <th>Sectors</th><th>Duty Hours (28d)</th><th>Utilization</th>
             <th>Early Dep</th><th>Night Dep</th><th>Overrides</th><th>Zone</th>
           </tr></thead><tbody>
         """
-        for i, row in df.iterrows():
-            pct = (row['hours'] / 100 * 100) if max_hrs > 0 else 0
-            bar_color = "#dc3545" if row['hours'] > avg_hrs * 1.2 else ("#f59e0b" if row['hours'] < avg_hrs * 0.8 else "#28a745")
 
-            if row['hours'] > avg_hrs * 1.2:
+        for i, row in enumerate(df.sort_values('hours', ascending=False).itertuples(), 1):
+            pct       = (row.hours / 100 * 100) if max_hrs > 0 else 0
+            bar_color = "#dc3545" if (avg_hrs > 0 and row.hours > avg_hrs * 1.2) else \
+                        ("#f59e0b" if (avg_hrs > 0 and row.hours < avg_hrs * 0.8) else "#28a745")
+
+            if avg_hrs > 0 and row.hours > avg_hrs * 1.2:
                 zone_class, zone_label = "zone-over",  "🔴 Over"
-            elif row['hours'] < avg_hrs * 0.8:
+            elif avg_hrs > 0 and row.hours < avg_hrs * 0.8:
                 zone_class, zone_label = "zone-under", "🟡 Under"
             else:
                 zone_class, zone_label = "zone-ok",    "✅ Balanced"
@@ -125,24 +156,22 @@ try:
 
             table_html += f"""
             <tr>
-              <td>{i+1}</td>
-              <td><b>{row['full_name']}</b></td>
-              <td>{'🟡 LCC' if row['role']=='LCC' else '🔵 CC'}</td>
-              <td style="font-family:'Share Tech Mono',monospace;font-size:0.7rem">{row['employee_id']}</td>
-              <td style="text-align:center">{int(row['sectors'])}</td>
-              <td><b>{row['hours']:.1f}h</b> {bar}</td>
-              <td style="text-align:center">{row['hours']/100*100:.0f}%</td>
-              <td style="text-align:center">{int(row['early'])}</td>
-              <td style="text-align:center">{int(row['night'])}</td>
-              <td style="text-align:center">{'⚠️ '+str(int(row['overrides'])) if row['overrides'] > 0 else '—'}</td>
+              <td>{i}</td>
+              <td><b>{row.full_name}</b></td>
+              <td>{'🟡 LCC' if row.role=='LCC' else '🔵 CC'}</td>
+              <td style="font-family:'Share Tech Mono',monospace;font-size:0.7rem">{row.employee_id}</td>
+              <td style="text-align:center">{row.sectors}</td>
+              <td><b>{row.hours:.1f}h</b> {bar}</td>
+              <td style="text-align:center">{row.hours/100*100:.0f}%</td>
+              <td style="text-align:center">{row.early}</td>
+              <td style="text-align:center">{row.night}</td>
+              <td style="text-align:center">{'⚠️ '+str(row.overrides) if row.overrides > 0 else '—'}</td>
               <td class="{zone_class}">{zone_label}</td>
             </tr>"""
 
         table_html += "</tbody></table>"
         st.markdown(table_html, unsafe_allow_html=True)
 
-        # CSV
-        import io
         csv_buf = io.StringIO()
         df.drop(columns=['id']).to_csv(csv_buf, index=False)
         csv_placeholder.download_button(
