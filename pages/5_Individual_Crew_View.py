@@ -62,6 +62,16 @@ try:
     conn = get_connection()
     cur  = conn.cursor()
 
+    # Ensure crew_leave table exists
+    cur.execute(
+        "CREATE TABLE IF NOT EXISTS crew_leave ("
+        "id SERIAL PRIMARY KEY, crew_id INTEGER NOT NULL, "
+        "leave_date DATE NOT NULL, leave_type VARCHAR(50) NOT NULL, "
+        "notes TEXT, created_at TIMESTAMP DEFAULT NOW(), "
+        "UNIQUE(crew_id, leave_date))"
+    )
+    conn.commit()
+
     # Crew selector
     cur.execute("SELECT id, full_name, role, employee_id FROM crew_master WHERE is_active=TRUE ORDER BY role, full_name")
     crew_list = cur.fetchall()
