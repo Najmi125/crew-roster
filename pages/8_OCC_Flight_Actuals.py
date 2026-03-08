@@ -152,11 +152,11 @@ try:
             with st.expander(f"{'✏️ Edit' if has_actual else '➕ Enter'} Actuals — {fn} {orig}→{dest}"):
                 f1, f2, f3 = st.columns(3)
                 with f1:
-                    default_dep = actuals_map[fid][1].time() if has_actual else sched_dep.time()
-                    new_block_off = st.time_input("Block Off (Actual Dep)", value=default_dep, key=f"dep_{fid}")
+                    default_dep = actuals_map[fid][1].strftime('%H:%M') if has_actual else sched_dep.strftime('%H:%M')
+                    dep_str_in = st.text_input("Block Off — Actual Dep (HH:MM)", value=default_dep, key=f"dep_{fid}")
                 with f2:
-                    default_arr = actuals_map[fid][2].time() if has_actual else sched_arr.time()
-                    new_block_on  = st.time_input("Block On (Actual Arr)", value=default_arr, key=f"arr_{fid}")
+                    default_arr = actuals_map[fid][2].strftime('%H:%M') if has_actual else sched_arr.strftime('%H:%M')
+                    arr_str_in = st.text_input("Block On — Actual Arr (HH:MM)", value=default_arr, key=f"arr_{fid}")
                 with f3:
                     default_notes = actuals_map[fid][4] if has_actual else ""
                     notes = st.text_input("Notes (optional)", value=default_notes, placeholder="e.g. Delayed - ATC hold", key=f"notes_{fid}")
@@ -165,8 +165,8 @@ try:
                 with bf1:
                     if st.button(f"💾 Save Actuals", key=f"save_{fid}"):
                         try:
-                            block_off_dt = datetime.combine(view_date, new_block_off)
-                            block_on_dt  = datetime.combine(view_date, new_block_on)
+                            block_off_dt = datetime.combine(view_date, datetime.strptime(dep_str_in, '%H:%M').time())
+                            block_on_dt  = datetime.combine(view_date, datetime.strptime(arr_str_in, '%H:%M').time())
                             conn2 = get_connection()
                             cur2  = conn2.cursor()
                             ensure_actuals_table(cur2)
