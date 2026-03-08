@@ -124,9 +124,9 @@ def build_roster(start_date, end_date):
         assigned_lcc = None
         assigned_ccs = []
 
-        # Sort by least sectors for fair rotation
-        lcc_sorted = sorted(lcc_states, key=lambda s: s.total_sectors)
-        cc_sorted  = sorted(cc_states,  key=lambda s: s.total_sectors)
+        # Sort by least hours for fair distribution
+        lcc_sorted = sorted(lcc_states, key=lambda s: s.total_hours)
+        cc_sorted  = sorted(cc_states,  key=lambda s: s.total_hours)
 
         for state in lcc_sorted:
             if state.is_legal(dep, arr):
