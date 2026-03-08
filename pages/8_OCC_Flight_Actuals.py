@@ -8,7 +8,7 @@ import os
 
 load_dotenv()
 
-st.set_page_config(page_title="Actuals Block time", page_icon="🛬", layout="wide")
+st.set_page_config(page_title="Block time", page_icon="🛬", layout="wide")
 
 def get_connection():
     try:
@@ -57,7 +57,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="page-title">🛬 OCC Flight Actuals</div>', unsafe_allow_html=True)
+st.markdown('<div class="page-title">🛬 Block time</div>', unsafe_allow_html=True)
 st.markdown('<div class="page-sub">ENTER ACTUAL BLOCK OFF / BLOCK ON TIMES — OVERRIDES SCHEDULED TIMES IN ALL FDTL CALCULATIONS</div>', unsafe_allow_html=True)
 
 # ── Date selector ─────────────────────────────────────────────────────────────
