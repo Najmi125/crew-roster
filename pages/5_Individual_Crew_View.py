@@ -125,6 +125,13 @@ try:
     except:
         quals = []
 
+    # Leave records
+    try:
+        cur.execute("SELECT leave_date, leave_type, notes FROM crew_leave WHERE crew_id=%s AND leave_date BETWEEN %s AND %s ORDER BY leave_date", (crew_id, month_start, month_end))
+        leave_records = {r[0]: (r[1], r[2]) for r in cur.fetchall()}
+    except:
+        leave_records = {}
+
     cur.close()
     conn.close()
 
