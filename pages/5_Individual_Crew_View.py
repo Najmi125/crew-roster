@@ -254,5 +254,51 @@ try:
     st.download_button("⬇️ Download CSV", csv_buf.getvalue(),
                        file_name=f"crew_{emp_id}_{month_start}.csv", mime="text/csv")
 
+    # ── Leave Management ──────────────────────────────────────────────────────
+    st.markdown("---")
+    with st.expander("📅 OCC LEAVE MANAGEMENT — Add / Remove Leave Days"):
+        st.markdown(f"**Managing leave for: {crew_name} ({emp_id})**")
+        lv1, lv2, lv3, lv4 = st.columns([1.5, 1.5, 2, 1])
+        with lv1:
+            leave_date = st.date_input("Leave Date", value=date.today(), key="lv_date")
+        with lv2:
+            leave_type = st.selectbox("Leave Type", ["Annual Leave", "Sick Leave", "Training", "Standby"], key="lv_type")
+        with lv3:
+            leave_notes = st.text_input("Notes (optional)", placeholder="e.g. Medical certificate", key="lv_notes")
+        with lv4:
+            st.markdown("<br>", unsafe_allow_html=True)
+            if st.button("➕ Add Leave", key="btn_add_leave"):
+                try:
+                    conn_l = get_connection(); cur_l = conn_l.cursor()
+                    cur_l.execute(
+                        "INSERT INTO crew_leave (crew_id, leave_date, leave_type, notes) "
+                        "VALUES (%s, %s, %s, %s) ON CONFLICT (crew_id, leave_date) "
+                        "DO UPDATE SET leave_type=EXCLUDED.leave_type, notes=EXCLUDED.notes",
+                        (crew_id, leave_date, leave_type, leave_notes)
+                    )
+                    cur_l.execute("DELETE FROM roster WHERE crew_id=%s AND duty_date=%s", (crew_id, leave_date))
+                    conn_l.commit(); cur_l.close(); conn_l.close()
+                    st.success(f"✅ {leave_type} added for {leave_date.strftime('%d %b')}")
+                    st.rerun()
+                except Exception as e2:
+                    st.error(f"Error: {e2}")
+
+        if leave_records:
+            st.markdown("**Current leave this month:**")
+            leave_df_rows = [{"Date": str(d), "Type": v[0], "Notes": v[1] or "—"} for d, v in sorted(leave_records.items())]
+            st.dataframe(pd.DataFrame(leave_df_rows), use_container_width=True, hide_index=True)
+            del_date = st.date_input("Remove leave on date", value=list(leave_records.keys())[0], key="lv_del_date")
+            if st.button("🗑️ Remove Leave", key="btn_del_leave"):
+                try:
+                    conn_l = get_connection(); cur_l = conn_l.cursor()
+                    cur_l.execute("DELETE FROM crew_leave WHERE crew_id=%s AND leave_date=%s", (crew_id, del_date))
+                    conn_l.commit(); cur_l.close(); conn_l.close()
+                    st.success(f"✅ Leave removed for {del_date.strftime('%d %b')}")
+                    st.rerun()
+                except Exception as e2:
+                    st.error(f"Error: {e2}")
+        else:
+            st.info("No leave recorded this month.")
+
 except Exception as e:
     st.error(f"Database error: {e}")
