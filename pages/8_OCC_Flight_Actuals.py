@@ -8,7 +8,7 @@ import os
 
 load_dotenv()
 
-st.set_page_config(page_title="OCC Flight Actuals", page_icon="🛬", layout="wide")
+st.set_page_config(page_title="Actuals Block time", page_icon="🛬", layout="wide")
 
 def get_connection():
     try:
