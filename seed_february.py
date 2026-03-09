@@ -119,16 +119,21 @@ def build_feb_roster():
     cur.execute("DELETE FROM duty_log WHERE duty_start::date BETWEEN %s AND %s", (FEB_START, FEB_END))
     conn.commit()
 
+    # Add flight_number column to duty_log if not exists
+    try:
+        cur.execute("ALTER TABLE duty_log ADD COLUMN IF NOT EXISTS flight_number VARCHAR(20)")
+        conn.commit()
+    except:
+        conn.rollback()
+
     chunk = 50
     for j in range(0, len(duty_rows), chunk):
         batch = duty_rows[j:j+chunk]
         for cid, fn, dep, arr, hrs in batch:
             cur.execute(
-                "INSERT INTO duty_log (crew_id, flight_id, duty_start, duty_end, total_duty_hours) "
-                "SELECT %s, fs.id, %s, %s, %s FROM flight_schedule fs "
-                "WHERE fs.flight_number=%s AND fs.departure_time::date=%s "
-                "LIMIT 1",
-                (cid, dep, arr, hrs, fn, dep.date())
+                "INSERT INTO duty_log (crew_id, flight_id, flight_number, duty_start, duty_end, total_duty_hours) "
+                "VALUES (%s, NULL, %s, %s, %s, %s)",
+                (cid, fn, dep, arr, hrs)
             )
         conn.commit()
 
