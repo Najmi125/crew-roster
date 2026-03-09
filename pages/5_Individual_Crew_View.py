@@ -5,9 +5,9 @@ from datetime import date, timedelta
 from dotenv import load_dotenv
 import os
 import sys
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'app', 'engine'))
+sys.path.insert(0, os.path.dirname(__file__))
 try:
-    from optimizer import reoptimize_from
+    from reopt_helper import reoptimize_from
     REOPT_AVAILABLE = True
 except:
     REOPT_AVAILABLE = False
@@ -270,61 +270,65 @@ try:
 
     # ── Leave Management ──────────────────────────────────────────────────────
     st.markdown("---")
-    with st.expander("📅 OCC LEAVE MANAGEMENT — Add / Remove Leave Days"):
-        st.markdown(f"**Managing leave for: {crew_name} ({emp_id})**")
-        lv1, lv2, lv3, lv4 = st.columns([1.5, 1.5, 2, 1])
+    with st.expander("📅 OCC LEAVE MANAGEMENT"):
+        st.markdown(f"**{crew_name}**")
+        lv1, lv2, lv3 = st.columns(3)
         with lv1:
-            leave_date = st.date_input("Leave Date", value=date.today(), key="lv_date")
+            lv_from = st.date_input("From", value=date.today(), key="lv_from")
         with lv2:
-            leave_type = st.selectbox("Leave Type", ["Annual Leave", "Sick Leave", "Training", "Standby"], key="lv_type")
+            lv_to   = st.date_input("To",   value=date.today(), key="lv_to")
         with lv3:
-            leave_notes = st.text_input("Notes (optional)", placeholder="e.g. Medical certificate", key="lv_notes")
-        with lv4:
-            st.markdown("<br>", unsafe_allow_html=True)
-            if st.button("➕ Add Leave", key="btn_add_leave"):
+            lv_type = st.selectbox("Type", ["Annual Leave","Sick Leave","Training","Standby"], key="lv_type")
+
+        c1, c2 = st.columns(2)
+        with c1:
+            if st.button("✅ Set Leave", key="btn_set_leave", use_container_width=True):
+                if lv_to < lv_from:
+                    st.error("'To' must be on or after 'From'.")
+                else:
+                    try:
+                        conn_l = get_connection(); cur_l = conn_l.cursor()
+                        d = lv_from
+                        while d <= lv_to:
+                            cur_l.execute(
+                                "INSERT INTO crew_leave (crew_id,leave_date,leave_type) VALUES (%s,%s,%s) "
+                                "ON CONFLICT (crew_id,leave_date) DO UPDATE SET leave_type=EXCLUDED.leave_type",
+                                (crew_id, d, lv_type))
+                            cur_l.execute("DELETE FROM roster WHERE crew_id=%s AND duty_date=%s", (crew_id, d))
+                            d += timedelta(days=1)
+                        conn_l.commit(); cur_l.close(); conn_l.close()
+                        days = (lv_to - lv_from).days + 1
+                        st.success(f"✅ {lv_type} set: {lv_from.strftime('%d %b')} – {lv_to.strftime('%d %b')} ({days} days)")
+                        if REOPT_AVAILABLE:
+                            try:
+                                n = reoptimize_from(lv_from, get_connection)
+                                st.info(f"🔄 Roster rebuilt from {lv_from.strftime('%d %b')}: {n} assignments")
+                            except Exception as re:
+                                st.warning(f"Re-opt skipped: {re}")
+                        st.rerun()
+                    except Exception as e2:
+                        st.error(f"Error: {e2}")
+        with c2:
+            if st.button("🗑️ Clear Leave", key="btn_clear_leave", use_container_width=True):
                 try:
                     conn_l = get_connection(); cur_l = conn_l.cursor()
-                    cur_l.execute(
-                        "INSERT INTO crew_leave (crew_id, leave_date, leave_type, notes) "
-                        "VALUES (%s, %s, %s, %s) ON CONFLICT (crew_id, leave_date) "
-                        "DO UPDATE SET leave_type=EXCLUDED.leave_type, notes=EXCLUDED.notes",
-                        (crew_id, leave_date, leave_type, leave_notes)
-                    )
-                    cur_l.execute("DELETE FROM roster WHERE crew_id=%s AND duty_date=%s", (crew_id, leave_date))
+                    cur_l.execute("DELETE FROM crew_leave WHERE crew_id=%s AND leave_date BETWEEN %s AND %s", (crew_id, lv_from, lv_to))
                     conn_l.commit(); cur_l.close(); conn_l.close()
-                    st.success(f"✅ {leave_type} added for {leave_date.strftime('%d %b')}")
+                    st.success(f"✅ Leave cleared: {lv_from.strftime('%d %b')} – {lv_to.strftime('%d %b')}")
                     if REOPT_AVAILABLE:
                         try:
-                            n = reoptimize_from(leave_date)
-                            st.info(f"🔄 Roster re-optimized: {n} assignments updated")
+                            n = reoptimize_from(lv_from, get_connection)
+                            st.info(f"🔄 Roster rebuilt from {lv_from.strftime('%d %b')}: {n} assignments")
                         except Exception as re:
-                            st.warning(f"Re-optimization skipped: {re}")
+                            st.warning(f"Re-opt skipped: {re}")
                     st.rerun()
                 except Exception as e2:
                     st.error(f"Error: {e2}")
 
         if leave_records:
             st.markdown("**Current leave this month:**")
-            leave_df_rows = [{"Date": str(d), "Type": v[0], "Notes": v[1] or "—"} for d, v in sorted(leave_records.items())]
-            st.dataframe(pd.DataFrame(leave_df_rows), use_container_width=True, hide_index=True)
-            del_date = st.date_input("Remove leave on date", value=list(leave_records.keys())[0], key="lv_del_date")
-            if st.button("🗑️ Remove Leave", key="btn_del_leave"):
-                try:
-                    conn_l = get_connection(); cur_l = conn_l.cursor()
-                    cur_l.execute("DELETE FROM crew_leave WHERE crew_id=%s AND leave_date=%s", (crew_id, del_date))
-                    conn_l.commit(); cur_l.close(); conn_l.close()
-                    st.success(f"✅ Leave removed for {del_date.strftime('%d %b')}")
-                    if REOPT_AVAILABLE:
-                        try:
-                            n = reoptimize_from(del_date)
-                            st.info(f"🔄 Roster re-optimized: {n} assignments updated")
-                        except Exception as re:
-                            st.warning(f"Re-optimization skipped: {re}")
-                    st.rerun()
-                except Exception as e2:
-                    st.error(f"Error: {e2}")
-        else:
-            st.info("No leave recorded this month.")
+            rows_lv = [{"Date": str(d), "Type": v[0]} for d,v in sorted(leave_records.items())]
+            st.dataframe(pd.DataFrame(rows_lv), use_container_width=True, hide_index=True)
 
 except Exception as e:
     st.error(f"Database error: {e}")
