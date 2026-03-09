@@ -298,13 +298,7 @@ try:
                             d += timedelta(days=1)
                         conn_l.commit(); cur_l.close(); conn_l.close()
                         days = (lv_to - lv_from).days + 1
-                        st.success(f"✅ {lv_type} set: {lv_from.strftime('%d %b')} – {lv_to.strftime('%d %b')} ({days} days)")
-                        if REOPT_AVAILABLE:
-                            try:
-                                n = reoptimize_from(lv_from, get_connection)
-                                st.info(f"🔄 Roster rebuilt from {lv_from.strftime('%d %b')}: {n} assignments")
-                            except Exception as re:
-                                st.warning(f"Re-opt skipped: {re}")
+                        st.success(f"✅ {lv_type} set: {lv_from.strftime('%d %b')} – {lv_to.strftime('%d %b')} ({days} days) — {crew_name} removed from all flights in this period")
                         st.rerun()
                     except Exception as e2:
                         st.error(f"Error: {e2}")
@@ -314,13 +308,7 @@ try:
                     conn_l = get_connection(); cur_l = conn_l.cursor()
                     cur_l.execute("DELETE FROM crew_leave WHERE crew_id=%s AND leave_date BETWEEN %s AND %s", (crew_id, lv_from, lv_to))
                     conn_l.commit(); cur_l.close(); conn_l.close()
-                    st.success(f"✅ Leave cleared: {lv_from.strftime('%d %b')} – {lv_to.strftime('%d %b')}")
-                    if REOPT_AVAILABLE:
-                        try:
-                            n = reoptimize_from(lv_from, get_connection)
-                            st.info(f"🔄 Roster rebuilt from {lv_from.strftime('%d %b')}: {n} assignments")
-                        except Exception as re:
-                            st.warning(f"Re-opt skipped: {re}")
+                    st.success(f"✅ Leave cleared: {lv_from.strftime('%d %b')} – {lv_to.strftime('%d %b')} — run optimizer to reassign flights")
                     st.rerun()
                 except Exception as e2:
                     st.error(f"Error: {e2}")
