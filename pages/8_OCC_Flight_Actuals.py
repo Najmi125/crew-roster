@@ -8,7 +8,7 @@ import os
 
 load_dotenv()
 
-st.set_page_config(page_title="Block time", page_icon="🛬", layout="wide")
+st.set_page_config(page_title="OCC Flight Actuals", page_icon="🛬", layout="wide")
 
 def get_connection():
     try:
@@ -31,12 +31,6 @@ def ensure_actuals_table(cur):
         )
     """)
 
-st.sidebar.image(
-    "https://raw.githubusercontent.com/Najmi125/crew-roster/main/assets/logo.png",
-    use_container_width=True
-)
-st.sidebar.markdown("---")
-
 st.markdown("""
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Exo+2:wght@300;400;600&family=Share+Tech+Mono&display=swap');
@@ -57,7 +51,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="page-title">🛬 Block time</div>', unsafe_allow_html=True)
+st.markdown('<div class="page-title">🛬 OCC Flight Actuals</div>', unsafe_allow_html=True)
 st.markdown('<div class="page-sub">ENTER ACTUAL BLOCK OFF / BLOCK ON TIMES — OVERRIDES SCHEDULED TIMES IN ALL FDTL CALCULATIONS</div>', unsafe_allow_html=True)
 
 # ── Date selector ─────────────────────────────────────────────────────────────
@@ -65,8 +59,6 @@ col1, col2 = st.columns([1, 4])
 with col1:
     view_date = st.date_input("Date", value=date.today() - timedelta(days=1), label_visibility="collapsed")
     st.caption("Select date")
-
-st.markdown('<button class="print-btn" onclick="window.print()">🖨️ Print / Save as PDF</button>', unsafe_allow_html=True)
 csv_placeholder = st.empty()
 
 try:
