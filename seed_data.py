@@ -28,6 +28,9 @@ crew = [
     ('EMP011', 'Usman Tariq',       'LCC', '+923001234511'),
     ('EMP012', 'Hina Baig',         'LCC', '+923001234512'),
     ('EMP013', 'Faisal Mahmood',    'LCC', '+923001234513'),
+    ('EMP014', 'Rabia Siddiqui',    'LCC', '+923001234514'),
+    ('EMP015', 'Tariq Mehmood',     'LCC', '+923001234515'),
+    ('EMP016', 'Ayesha Zafar',      'LCC', '+923001234516'),
     ('EMP021', 'Fatima Rizvi',            'CC',  '+923001234521'),
     ('EMP022', 'Omar Sheikh',             'CC',  '+923001234522'),
     ('EMP023', 'Ayesha Siddiqui',         'CC',  '+923001234523'),
@@ -55,6 +58,11 @@ crew = [
     ('EMP045', 'Zeeshan Awan',            'CC',  '+923001234545'),
     ('EMP046', 'Laiba Tariq',             'CC',  '+923001234546'),
     ('EMP047', 'Asad Mehmood',            'CC',  '+923001234547'),
+    ('EMP048', 'Rida Kazmi',              'CC',  '+923001234548'),
+    ('EMP049', 'Fawad Chaudhry',          'CC',  '+923001234549'),
+    ('EMP050', 'Mehwish Anwar',           'CC',  '+923001234550'),
+    ('EMP051', 'Saad Rafique',            'CC',  '+923001234551'),
+    ('EMP052', 'Aroha Pervez',            'CC',  '+923001234552'),
 ]
 
 cur.executemany("""
@@ -99,5 +107,5 @@ cur.close()
 conn.close()
 
 print(f"✅ Database seeded successfully!")
-print(f"   → {len(crew)} crew members (13 LCC + 27 CC)")
+print(f"   → {len(crew)} crew members (16 LCC + 32 CC)")
 print(f"   → {len(flights_to_insert)} flights (12 daily × 30 days) — XYZ callsigns")
