@@ -119,12 +119,6 @@ with st.expander("🔧 OCC OVERRIDE CONTROLS", expanded=False):
                     cur.execute("INSERT INTO legality_violations (flight_id, crew_id, violation_type, details) VALUES (%s,%s,%s,%s)", (fid, add_id, 'MANUAL_CREW_CHANGE', f'OCC replaced crew on {fn} {fd}'))
                     conn.commit(); cur.close(); conn.close()
                     st.success(f"✅ Crew changed on {fn} ({fd.strftime('%d %b')})")
-                    if REOPT_AVAILABLE:
-                        try:
-                            n = reoptimize_from(fd, get_connection)
-                            st.info(f"🔄 Roster re-optimized: {n} assignments updated from {fd.strftime('%d %b')}")
-                        except Exception as re:
-                            st.warning(f"Roster re-optimization skipped: {re}")
                     st.rerun()
                 except Exception as e:
                     st.error(f"Error: {e}")
@@ -157,12 +151,6 @@ with st.expander("🔧 OCC OVERRIDE CONTROLS", expanded=False):
                     cur.execute("INSERT INTO legality_violations (flight_id, crew_id, violation_type, details) VALUES (%s,NULL,%s,%s)", (fid_c, 'FLIGHT_CANCELLED', f'OCC cancelled {fn_c} on {fd_c} — {cancel_reason}'))
                     conn.commit(); cur.close(); conn.close()
                     st.success(f"✅ {fn_c} on {fd_c.strftime('%d %b')} cancelled")
-                    if REOPT_AVAILABLE:
-                        try:
-                            n = reoptimize_from(fd_c, get_connection)
-                            st.info(f"🔄 Roster re-optimized: {n} assignments updated from {fd_c.strftime('%d %b')}")
-                        except Exception as re:
-                            st.warning(f"Roster re-optimization skipped: {re}")
                     st.rerun()
                 except Exception as e:
                     st.error(f"Error: {e}")
@@ -207,12 +195,6 @@ with st.expander("🔧 OCC OVERRIDE CONTROLS", expanded=False):
                     cur.execute("INSERT INTO legality_violations (flight_id, crew_id, violation_type, details) VALUES (%s,NULL,'AD_HOC_FLIGHT',%s)", (new_fid, f'OCC added ad-hoc flight {ah_fn} {ah_orig}-{ah_dest} on {ah_date}'))
                     conn.commit(); cur.close(); conn.close()
                     st.success(f"✅ Ad-hoc flight {ah_fn} created and crew assigned")
-                    if REOPT_AVAILABLE:
-                        try:
-                            n = reoptimize_from(ah_date, get_connection)
-                            st.info(f"🔄 Roster re-optimized: {n} assignments updated from {ah_date.strftime('%d %b')}")
-                        except Exception as re:
-                            st.warning(f"Roster re-optimization skipped: {re}")
                     st.rerun()
                 except Exception as e:
                     st.error(f"Error: {e}")
@@ -253,12 +235,6 @@ with st.expander("🔧 OCC OVERRIDE CONTROLS", expanded=False):
                     cur.execute("INSERT INTO legality_violations (flight_id, crew_id, violation_type, details) VALUES (%s,NULL,'FLIGHT_RETIMED',%s)", (fid_rt, f'OCC retimed {fn_rt} on {fd_rt}: dep {new_dep} arr {new_arr}'))
                     conn.commit(); cur.close(); conn.close()
                     st.success(f"✅ {fn_rt} retimed to {new_dep}→{new_arr}")
-                    if REOPT_AVAILABLE:
-                        try:
-                            n = reoptimize_from(fd_rt, get_connection)
-                            st.info(f"🔄 Roster re-optimized: {n} assignments updated from {fd_rt.strftime('%d %b')}")
-                        except Exception as re:
-                            st.warning(f"Roster re-optimization skipped: {re}")
                     st.rerun()
                 except Exception as e:
                     st.error(f"Error: {e}")
