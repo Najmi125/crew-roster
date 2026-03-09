@@ -17,7 +17,7 @@ st.sidebar.image(
 
 st.markdown("## **✈ AI-Driven Crew Operations Control Platform**")
 st.markdown("Intelligent 30-Day Rolling Roster: Cabin Crew")
-st.markdown("Live Demonstration Model — XYZ Airlines | 3 x A320 | 12 Daily Flights | 75 Crew Members")
+st.markdown("Live Demonstration Model — XYZ Airlines | 3 x A320 | 12 Daily Flights | 48 Crew Members")
 st.markdown("CAA Pakistan FDTL–Compliant")
 
 st.markdown("---")
