@@ -17,12 +17,6 @@ def get_connection():
         url = os.getenv("DATABASE_URL")
     return psycopg2.connect(url)
 
-st.sidebar.image(
-    "https://raw.githubusercontent.com/Najmi125/crew-roster/main/assets/logo.png",
-    use_container_width=True
-)
-st.sidebar.markdown("---")
-
 st.markdown("""
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Exo+2:wght@300;400;600&family=Share+Tech+Mono&display=swap');
@@ -52,8 +46,6 @@ st.markdown('<div class="page-sub">GOVERNANCE DASHBOARD — FAIRNESS & EFFICIENC
 col1, col2 = st.columns([3, 1])
 with col2:
     role_filter = st.selectbox("Filter by Role", ["All", "LCC", "CC"])
-
-st.markdown('<button class="print-btn" onclick="window.print()">🖨️ Print / Save as PDF</button>', unsafe_allow_html=True)
 csv_placeholder = st.empty()
 
 try:
