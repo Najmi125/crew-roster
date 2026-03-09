@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 import io
 import os
 import sys
-sys.path.insert(0, os.path.dirname(__file__))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 try:
     from reopt_helper import reoptimize_from
     REOPT_AVAILABLE = True
@@ -23,12 +23,6 @@ def get_connection():
     except:
         url = os.getenv("DATABASE_URL")
     return psycopg2.connect(url)
-
-st.sidebar.image(
-    "https://raw.githubusercontent.com/Najmi125/crew-roster/main/assets/logo.png",
-    use_container_width=True
-)
-st.sidebar.markdown("---")
 
 st.markdown("""
 <style>
@@ -241,7 +235,6 @@ with st.expander("🔧 OCC OVERRIDE CONTROLS", expanded=False):
 
 # ── FLIGHT VIEW ───────────────────────────────────────────────────────────────
 st.markdown("---")
-st.markdown('<button class="print-btn" onclick="window.print()">🖨️ Print / Save as PDF</button>', unsafe_allow_html=True)
 csv_placeholder = st.empty()
 
 try:
