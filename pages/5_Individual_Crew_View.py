@@ -5,7 +5,7 @@ from datetime import date, timedelta
 from dotenv import load_dotenv
 import os
 import sys
-sys.path.insert(0, os.path.dirname(__file__))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 try:
     from reopt_helper import reoptimize_from
     REOPT_AVAILABLE = True
@@ -119,7 +119,8 @@ try:
     cur.execute(
         "SELECT COALESCE(dl.flight_number, fs.flight_number) as fn, "
         "dl.duty_start::date, dl.duty_start, dl.duty_end, "
-        "COALESCE(fs.origin,'—') as orig, COALESCE(fs.destination,'—') as dest "
+        "COALESCE(dl.origin, fs.origin, '—') as orig, "
+        "COALESCE(dl.destination, fs.destination, '—') as dest "
         "FROM duty_log dl "
         "LEFT JOIN flight_schedule fs ON fs.id = dl.flight_id "
         "WHERE dl.crew_id = %s AND dl.duty_start::date BETWEEN %s AND %s "
@@ -260,7 +261,6 @@ try:
     st.markdown("---")
 
     # Print + CSV
-    st.markdown('<button class="print-btn" onclick="window.print()">🖨️ Print / Save as PDF</button>', unsafe_allow_html=True)
 
     import io
     lm_csv_rows = [{"Flight": fn, "Date": str(dt), "Route": f"{orig}→{dest}",
