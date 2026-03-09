@@ -4,6 +4,13 @@ import pandas as pd
 from datetime import date, timedelta
 from dotenv import load_dotenv
 import os
+import sys
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'app', 'engine'))
+try:
+    from optimizer import reoptimize_from
+    REOPT_AVAILABLE = True
+except:
+    REOPT_AVAILABLE = False
 
 load_dotenv()
 
@@ -286,6 +293,12 @@ try:
                     cur_l.execute("DELETE FROM roster WHERE crew_id=%s AND duty_date=%s", (crew_id, leave_date))
                     conn_l.commit(); cur_l.close(); conn_l.close()
                     st.success(f"✅ {leave_type} added for {leave_date.strftime('%d %b')}")
+                    if REOPT_AVAILABLE:
+                        try:
+                            n = reoptimize_from(leave_date)
+                            st.info(f"🔄 Roster re-optimized: {n} assignments updated")
+                        except Exception as re:
+                            st.warning(f"Re-optimization skipped: {re}")
                     st.rerun()
                 except Exception as e2:
                     st.error(f"Error: {e2}")
@@ -301,6 +314,12 @@ try:
                     cur_l.execute("DELETE FROM crew_leave WHERE crew_id=%s AND leave_date=%s", (crew_id, del_date))
                     conn_l.commit(); cur_l.close(); conn_l.close()
                     st.success(f"✅ Leave removed for {del_date.strftime('%d %b')}")
+                    if REOPT_AVAILABLE:
+                        try:
+                            n = reoptimize_from(del_date)
+                            st.info(f"🔄 Roster re-optimized: {n} assignments updated")
+                        except Exception as re:
+                            st.warning(f"Re-optimization skipped: {re}")
                     st.rerun()
                 except Exception as e2:
                     st.error(f"Error: {e2}")
