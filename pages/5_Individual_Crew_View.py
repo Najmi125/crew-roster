@@ -117,8 +117,11 @@ try:
     last_month_start = last_month_end.replace(day=1)
 
     cur.execute(
-        "SELECT fs.flight_number, dl.duty_start::date, dl.duty_start, dl.duty_end, fs.origin, fs.destination "
-        "FROM duty_log dl JOIN flight_schedule fs ON fs.id = dl.flight_id "
+        "SELECT COALESCE(dl.flight_number, fs.flight_number) as fn, "
+        "dl.duty_start::date, dl.duty_start, dl.duty_end, "
+        "COALESCE(fs.origin,'—') as orig, COALESCE(fs.destination,'—') as dest "
+        "FROM duty_log dl "
+        "LEFT JOIN flight_schedule fs ON fs.id = dl.flight_id "
         "WHERE dl.crew_id = %s AND dl.duty_start::date BETWEEN %s AND %s "
         "ORDER BY dl.duty_start",
         (crew_id, last_month_start, last_month_end)
