@@ -6,9 +6,9 @@ from dotenv import load_dotenv
 import io
 import os
 import sys
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'app', 'engine'))
+sys.path.insert(0, os.path.dirname(__file__))
 try:
-    from optimizer import reoptimize_from
+    from reopt_helper import reoptimize_from
     REOPT_AVAILABLE = True
 except:
     REOPT_AVAILABLE = False
@@ -121,7 +121,7 @@ with st.expander("🔧 OCC OVERRIDE CONTROLS", expanded=False):
                     st.success(f"✅ Crew changed on {fn} ({fd.strftime('%d %b')})")
                     if REOPT_AVAILABLE:
                         try:
-                            n = reoptimize_from(fd)
+                            n = reoptimize_from(fd, get_connection)
                             st.info(f"🔄 Roster re-optimized: {n} assignments updated from {fd.strftime('%d %b')}")
                         except Exception as re:
                             st.warning(f"Roster re-optimization skipped: {re}")
@@ -159,7 +159,7 @@ with st.expander("🔧 OCC OVERRIDE CONTROLS", expanded=False):
                     st.success(f"✅ {fn_c} on {fd_c.strftime('%d %b')} cancelled")
                     if REOPT_AVAILABLE:
                         try:
-                            n = reoptimize_from(fd_c)
+                            n = reoptimize_from(fd_c, get_connection)
                             st.info(f"🔄 Roster re-optimized: {n} assignments updated from {fd_c.strftime('%d %b')}")
                         except Exception as re:
                             st.warning(f"Roster re-optimization skipped: {re}")
@@ -209,7 +209,7 @@ with st.expander("🔧 OCC OVERRIDE CONTROLS", expanded=False):
                     st.success(f"✅ Ad-hoc flight {ah_fn} created and crew assigned")
                     if REOPT_AVAILABLE:
                         try:
-                            n = reoptimize_from(ah_date)
+                            n = reoptimize_from(ah_date, get_connection)
                             st.info(f"🔄 Roster re-optimized: {n} assignments updated from {ah_date.strftime('%d %b')}")
                         except Exception as re:
                             st.warning(f"Roster re-optimization skipped: {re}")
@@ -255,7 +255,7 @@ with st.expander("🔧 OCC OVERRIDE CONTROLS", expanded=False):
                     st.success(f"✅ {fn_rt} retimed to {new_dep}→{new_arr}")
                     if REOPT_AVAILABLE:
                         try:
-                            n = reoptimize_from(fd_rt)
+                            n = reoptimize_from(fd_rt, get_connection)
                             st.info(f"🔄 Roster re-optimized: {n} assignments updated from {fd_rt.strftime('%d %b')}")
                         except Exception as re:
                             st.warning(f"Roster re-optimization skipped: {re}")
