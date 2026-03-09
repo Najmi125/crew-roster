@@ -71,7 +71,6 @@ try:
 
     # ── TAB 1: Crew List ──────────────────────────────────────────────────────
     with tab1:
-        st.markdown('<button class="print-btn" onclick="window.print()">🖨️ Print / Save as PDF</button>', unsafe_allow_html=True)
 
         cur.execute("""
             SELECT cm.id, cm.employee_id, cm.full_name, cm.role, cm.whatsapp_number, cm.is_active
