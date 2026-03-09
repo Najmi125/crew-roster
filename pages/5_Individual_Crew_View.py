@@ -117,10 +117,10 @@ try:
     last_month_start = last_month_end.replace(day=1)
 
     cur.execute(
-        "SELECT fs.flight_number, fs.departure_time::date, fs.departure_time, fs.arrival_time, fs.origin, fs.destination "
-        "FROM roster r JOIN flight_schedule fs ON fs.id = r.flight_id "
-        "WHERE r.crew_id = %s AND fs.departure_time::date BETWEEN %s AND %s "
-        "ORDER BY fs.departure_time",
+        "SELECT fs.flight_number, dl.duty_start::date, dl.duty_start, dl.duty_end, fs.origin, fs.destination "
+        "FROM duty_log dl JOIN flight_schedule fs ON fs.id = dl.flight_id "
+        "WHERE dl.crew_id = %s AND dl.duty_start::date BETWEEN %s AND %s "
+        "ORDER BY dl.duty_start",
         (crew_id, last_month_start, last_month_end)
     )
     last_month_duties = cur.fetchall()
@@ -260,13 +260,14 @@ try:
     st.markdown('<button class="print-btn" onclick="window.print()">🖨️ Print / Save as PDF</button>', unsafe_allow_html=True)
 
     import io
-    csv_rows = [{"Flight": fn, "Date": str(dt), "Route": f"{orig}→{dest}",
-                 "Hours": f"{(arr-dep).total_seconds()/3600:.1f}"}
-                for fn, dt, dep, arr, orig, dest, _ in duties]
+    lm_csv_rows = [{"Flight": fn, "Date": str(dt), "Route": f"{orig}→{dest}",
+                    "Dep": dep.strftime("%H:%M"), "Arr": arr.strftime("%H:%M"),
+                    "Hours": f"{(arr-dep).total_seconds()/3600:.1f}"}
+                   for fn, dt, dep, arr, orig, dest in last_month_duties] if last_month_duties else []
     csv_buf = io.StringIO()
-    pd.DataFrame(csv_rows).to_csv(csv_buf, index=False)
-    st.download_button("⬇️ Download CSV", csv_buf.getvalue(),
-                       file_name=f"crew_{emp_id}_{month_start}.csv", mime="text/csv")
+    pd.DataFrame(lm_csv_rows).to_csv(csv_buf, index=False)
+    st.download_button("⬇️ Download Last Month CSV", csv_buf.getvalue(),
+                       file_name=f"crew_{emp_id}_{last_month_start.strftime('%Y-%m')}.csv", mime="text/csv")
 
     # ── Leave Management ──────────────────────────────────────────────────────
     st.markdown("---")
