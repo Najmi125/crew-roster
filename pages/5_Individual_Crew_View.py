@@ -102,14 +102,14 @@ try:
     """, (crew_id, month_start, month_end))
     duties = cur.fetchall()
 
-    # FDTL stats — past duties only (duty_start <= today)
-    cur.execute("SELECT COALESCE(SUM(total_duty_hours),0) FROM duty_log WHERE crew_id=%s AND duty_start >= %s AND duty_start <= %s", (crew_id, today - timedelta(days=7), today))
+    # FDTL stats — all scheduled duties (planned = committed for FDTL purposes)
+    cur.execute("SELECT COALESCE(SUM(total_duty_hours),0) FROM duty_log WHERE crew_id=%s AND duty_start::date >= %s", (crew_id, today - timedelta(days=7)))
     weekly_hrs = float(cur.fetchone()[0])
 
-    cur.execute("SELECT COALESCE(SUM(total_duty_hours),0) FROM duty_log WHERE crew_id=%s AND duty_start >= %s AND duty_start <= %s", (crew_id, today - timedelta(days=28), today))
+    cur.execute("SELECT COALESCE(SUM(total_duty_hours),0) FROM duty_log WHERE crew_id=%s AND duty_start::date >= %s", (crew_id, today - timedelta(days=28)))
     monthly_hrs = float(cur.fetchone()[0])
 
-    cur.execute("SELECT MAX(duty_end) FROM duty_log WHERE crew_id=%s AND duty_start <= %s", (crew_id, today))
+    cur.execute("SELECT MAX(duty_end) FROM duty_log WHERE crew_id=%s", (crew_id,))
     last_end = cur.fetchone()[0]
 
     # Last month date range
